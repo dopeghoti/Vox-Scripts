@@ -109,24 +109,11 @@ set faq(glob_flag) "M"
 set faq(chan_flag) ""
 
 # Channels the FAQ is active on
-set faq(channels) "##VoxelHead #mcbots #MineCraftHelp"
+set faq(channels) "##VoxelHead #mcbots #MineCraftHelp #Minecraft"
 
 #################
 # END OF CONFIG #
 #################
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ##############
 # STOP HERE! #
@@ -149,6 +136,7 @@ bind pub - "[string trim $faq(cmdchar)]~" faq:modify_fact
 bind pub - "[string trim $faq(cmdchar)]close-faq" faq:close-faqdb
 bind pub - "[string trim $faq(cmdchar)]open-faq" faq:open-faqdb
 bind pub - "[string trim $faq(cmdchar)]faq-help" faq:faq_howto
+bind pub - "[string trim $faq(cmdchar)]index" faq:faq_index
 
 #########
 # PROCS #
@@ -165,13 +153,13 @@ proc faq:close-faqdb {nick idx handle channel args} {
  }
  if {$faq(status)==0} {
   set faq(status) 1
-  putnotc $nick "The faq-database was \002closed correctly\002."
-  putnotc $nick "Now anybody cant use the command '[string trim $faq(cmdchar)] keyword'."
+  putnotc $nick "The faq-database was \002closed\002."
+  putnotc $nick "Now nobody can use the command '[string trim $faq(cmdchar)] keyword'."
   putnotc $nick "To open the faq-database again use the command '[string trim $faq(cmdchar)]open-faq'."
   return 0
  }
  if {$faq(status)==1} {
-  putnotc $nick "The faq-database is \002already closed\002."
+  putnotc $nick "The faq-database is \002already\002 closed."
   return 0
  }
 }
@@ -187,13 +175,13 @@ proc faq:open-faqdb {nick idx handle channel args} {
  }
  if {$faq(status)==1} {
   set faq(status) 0
-  putnotc $nick "The faq-database was \002opened correctly\002."
+  putnotc $nick "The faq-database was \002opened\002."
   putnotc $nick "Now anybody can use the command '[string trim $faq(cmdchar)] \002keyword\002'."
   putnotc $nick "To close the faq-database again just use the command '[string trim $faq(cmdchar)]close-faq'."
   return 0
  }
  if {$faq(status)==0} {
-  putnotc $nick "The faq-database is \002already open\002."
+  putnotc $nick "The faq-database is \002already\002 open."
   return 0
  }
 }
@@ -474,9 +462,9 @@ proc faq:faq_howto {nick idx handle channel args} {
  if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
   if {$faq(status)==0} {
    putnotc $nick " - [string trim $faq(cmdchar)]close-faq"
-   putnotc $nick " - [string trim $faq(cmdchar)]addword : [string trim $faq(cmdchar)]addword \002keyword\002[string trim $faq(splitchar)]your description goes here..."
-   putnotc $nick " - [string trim $faq(cmdchar)]delword : [string trim $faq(cmdchar)]delword \002keyword\002"
-   putnotc $nick " - [string trim $faq(cmdchar)]modify : [string trim $faq(cmdchar)]modify \002keyword\002[string trim $faq(splitchar)]your new description goes here..."
+   putnotc $nick " - [string trim $faq(cmdchar)]+ : [string trim $faq(cmdchar)]+ \002keyword\002[string trim $faq(splitchar)]your description goes here..."
+   putnotc $nick " - [string trim $faq(cmdchar)]- : [string trim $faq(cmdchar)]- \002keyword\002"
+   putnotc $nick " - [string trim $faq(cmdchar)]~ : [string trim $faq(cmdchar)]~ \002keyword\002[string trim $faq(splitchar)]your new description goes here..."
   }
   if {$faq(status)==1} {
    putnotc $nick " - [string trim $faq(cmdchar)]open-faq"
@@ -484,8 +472,19 @@ proc faq:faq_howto {nick idx handle channel args} {
  }
  if {$faq(status)==0} {
   putnotc $nick " - [string trim $faq(cmdchar)] \002keyword\002 : looks up keyword in the database"
-  putnotc $nick " - To let the bot tell someone about something use [string trim $faq(cmdchar)]faq nick \002keyword\002"
+  putnotc $nick " - To let the bot tell someone about something use [string trim $faq(cmdchar)]> nick \002keyword\002"
  }
+ if {$faq(status)==1} {
+  putnotc $nick "The faq-database is \002closed\002."
+ }
+}
+
+proc faq:faq_index {nick idx handle channel args} {
+ global faq
+ if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
+  return 0
+ }
+ putnotc $nick "A list of FAQ keywords can be seen at http://mchelp.darksigns.net/faqindex"
  if {$faq(status)==1} {
   putnotc $nick "The faq-database is \002closed\002."
  }
@@ -495,7 +494,7 @@ proc faq:faq_howto {nick idx handle channel args} {
 # LOG #
 #######
 
-putlog "FAQ-Database $faq(version) (by ICU <icu@eggdrop-support.org>) loaded. - Original by BaRDaHL"
+putlog "FAQ-Database $faq(version) loaded."
 
 #################
 # END OF SCRIPT #
