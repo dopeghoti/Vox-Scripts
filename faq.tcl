@@ -111,6 +111,17 @@ set faq(chan_flag) ""
 # Channels the FAQ is active on
 set faq(channels) "##VoxelHead #mcbots #MineCraftHelp #Minecraft"
 
+# # Flood protection; default three in sixty seconds
+# set flood 3:180
+
+# if ![info exists ::lastFAQ] {set ::lastFAQ 0}
+
+#  set max [lindex [split $flood ":"] 0]; set time [lindex [split $flood ":"] 1]
+
+# if {$::lastFAQ >= $max} {set type notice; set dest $nick} \
+# 	else {set type privmsg; set dest $chan}
+
+
 #################
 # END OF CONFIG #
 #################
@@ -122,7 +133,7 @@ set faq(channels) "##VoxelHead #mcbots #MineCraftHelp #Minecraft"
 # Initial Status of the Database (0 = open 1 = closed)
 set faq(status) 0
 # Current Version of the Database
-set faq(version) "20040926 v2.10"
+set faq(version) "20110220 v2.15"
 
 #########
 # BINDS #
