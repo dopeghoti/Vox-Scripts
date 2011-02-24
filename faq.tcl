@@ -5,6 +5,8 @@
 # Thanks to #eggdrop.support for all the tips and support :)
 #
 # ChangeLog
+#
+# 20110221 - Incorporated deflood.tcl
 # 
 # 20030106 - Changed Name to faq.tcl (changed purpose)
 #          - Changed some commands
@@ -82,6 +84,9 @@
 # ?modify keyword§definition - used to modify a keyword in the db
 # ?open-faq - opens the database if closed
 # ?close-faq - closes the database if opened
+#
+# Flood control:
+# #if {![checkUser $nick $chan]} {return}
 
 ########
 # SETS #
@@ -112,7 +117,7 @@ set faq(chan_flag) ""
 set faq(channels) "##VoxelHead #mcbots #MineCraftHelp #Minecraft"
 
 # # Flood protection; default three in sixty seconds
-# set flood 3:180
+set flood 4:180
 
 # if ![info exists ::lastFAQ] {set ::lastFAQ 0}
 
@@ -141,6 +146,8 @@ set faq(version) "20110220 v2.15"
 
 bind pub - "[string trim $faq(cmdchar)]" faq:explain_fact
 bind pub - "[string trim $faq(cmdchar)]>" faq:tell_fact
+bind pub - "[string trim $faq(cmdchar)]<" faq:self_fact
+bind pub - "[string trim $faq(cmdchar)]>>" faq:send_fact
 bind pub - "[string trim $faq(cmdchar)]+" faq:add_fact
 bind pub - "[string trim $faq(cmdchar)]-" faq:delete_fact
 bind pub - "[string trim $faq(cmdchar)]~" faq:modify_fact
@@ -200,6 +207,28 @@ proc faq:open-faqdb {nick idx handle channel args} {
 
 proc faq:explain_fact {nick idx handle channel args} {
 	global faq
+	global flood
+
+	if ![info exists ::lastFAQ] {set ::lastFAQ 0}
+
+	#	Parse flood settings
+	set fmax [lindex [split $flood ":"] 0]
+	set ftime [lindex [split $flood ":"] 1]
+
+	#	Set output type based on flood control
+	if {$::lastFAQ>=$fmax} {
+		set otype notice
+		set odest $nick
+		putnotc $nick "Flood prevention has cause my answer to be in a CTCP NOTICE instead of in-channel."
+	} else {
+		set otype privmsg
+		set odest $channel
+	}
+
+	#	Increase the counter now, and after time, decrease to zero
+	incr ::lastFAQ
+	utimer $ftime [list incr ::lastFAQ -1]
+
 	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
 		return 0
 	}
@@ -227,17 +256,20 @@ proc faq:explain_fact {nick idx handle channel args} {
 			if {[string match -nocase "*$faq(newline)*" $dbdefinition]} {
 				set out1 [lindex [split $dbdefinition $faq(newline)] 0]
 				set out2 [string range $dbdefinition [expr [string length $out1]+2] end]
-				putmsg $channel "\002$fact\002: $out1"
-				putmsg $channel "\002$fact\002: $out2"
+#				putmsg $channel "\002$fact\002: $out1"
+#				putmsg $channel "\002$fact\002: $out2"
+				puthelp "$otype $odest :\002$fact\002: $out1"
+				puthelp "$otype $odest :\002$fact\002: $out2"
 			} else { 
-				putmsg $channel "\002$fact\002: $dbdefinition"
+#				putmsg $channel "\002$fact\002: $dbdefinition"
+				puthelp "$otype $odest :\002$fact\002: $dbdefinition"
 			}
 			close $database
 			return 0
 		}
 	}
 	close $database
-	putnotc $nick "I don't know about \002$fact\002."
+	putnotc $nick "I don't entry in my databse for the keyword, \002$fact\002."
 	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
 		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]addword \002$fact\002[string trim $faq(splitchar)]Definition goes here."
 	} else {
@@ -248,6 +280,10 @@ proc faq:explain_fact {nick idx handle channel args} {
 
 proc faq:tell_fact {nick idx handle channel args} {
 	global faq
+	
+	#	Flood control
+	if {![checkUser $nick $channel]} {return}
+
 	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
 		return 0
 	}
@@ -499,6 +535,125 @@ proc faq:faq_index {nick idx handle channel args} {
 	if {$faq(status)==1} {
 		putnotc $nick "The faq-database is \002closed\002."
 	}
+}
+
+proc faq:self_fact {nick idx handle channel args} {
+	global faq
+	set otype notice
+	set odest $nick
+
+	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
+		return 0
+	}
+	if {$faq(status) == 1} { 
+		putnotc $nick "The faq-database is \002closed\002."
+		return 0 
+	}
+	if {![file exist $faq(database)]} { 
+		set database [open $faq(database) w]
+		puts -nonewline $database ""
+		close $database
+	}
+	set fact [ string trim [ string tolower [ join $args ] ] ]
+	if {$fact == ""} {
+		#  putmsg $nick "Syntax: [string trim $faq(cmdchar)] \002keyword\002"
+		return 0
+	}
+	set database [open $faq(database) r]
+	set dbline ""
+	while {![eof $database]} {
+		gets $database dbline
+		set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ]] 
+		set dbdefinition [string range $dbline [expr [string length $fact]+1] end]
+		if {$dbfact==$fact} {
+			if {[string match -nocase "*$faq(newline)*" $dbdefinition]} {
+				set out1 [lindex [split $dbdefinition $faq(newline)] 0]
+				set out2 [string range $dbdefinition [expr [string length $out1]+2] end]
+#				putmsg $channel "\002$fact\002: $out1"
+#				putmsg $channel "\002$fact\002: $out2"
+				puthelp "$otype $odest :\002$fact\002: $out1"
+				puthelp "$otype $odest :\002$fact\002: $out2"
+			} else { 
+#				putmsg $channel "\002$fact\002: $dbdefinition"
+				puthelp "$otype $odest :\002$fact\002: $dbdefinition"
+			}
+			close $database
+			return 0
+		}
+	}
+	close $database
+	putnotc $nick "I don't entry in my databse for the keyword, \002$fact\002."
+	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
+		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]addword \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+	} else {
+		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
+	}
+	return 0
+}
+
+proc faq:send_fact {nick idx handle channel args} {
+	global faq
+	
+	#	Flood control
+	if {![checkUser $nick $channel]} {return}
+
+	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
+		return 0
+	}
+	if {$faq(status)==1} { 
+		putnotc $nick "The faq-database is \002closed\002."
+		return 0 
+	}
+	if {![file exist $faq(database)]} { 
+		set database [open $faq(database) w]
+		puts -nonewline $database ""
+		close $database
+	}
+	set tellnick [ lindex [split [join $args]] 0 ] 
+	set fact [ string trim [ string tolower [ join [ lrange [split [join $args]] 1 end ] ] ] ]
+	if {$tellnick == ""} { 
+		putnotc $nick "Syntax: [string trim $faq(cmdchar)]faq \002nick\002 keyword"
+		return 0 
+	}
+	if {$fact == ""} { 
+		putnotc $nick "Syntax: [string trim $faq(cmdchar)]faq nick \002keyword\002"
+		return 0
+	}
+	set database [open $faq(database) r]
+	set dbline ""
+	while {![eof $database]} {
+		gets $database dbline
+		set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ] ]
+		set dbdefinition [string range $dbline [expr [string length $fact]+1] end]
+		if {$dbfact==$fact} {
+			if {[string match -nocase "*$faq(newline)*" $dbdefinition]} {
+				set out1 [lindex [split $dbdefinition "$faq(newline)"] 0]
+				set out2 [string range $dbdefinition [expr [string length $out1]+2] end]
+#				putmsg $channel "\002$tellnick\002: ($dbfact) $out1"
+#				putmsg $channel "\002$tellnick\002: ($dbfact) $out2"
+				putnotc $tellnick "$nick wanted you to know about \002$dbfact\002:"
+				putnotc $tellnick "$out1"
+				putnotc $tellnick "$out2"
+				putnotc $nick "I told $tellnick about \002$dbfact\002."
+			} else {
+				putnotc $tellnick "$nick wanted you to know about \002$dbfact\002:"
+#				putmsg $channel "\002$tellnick\002: ($dbfact) $dbdefinition"
+				putnotc $tellnick "$dbdefinition"
+				putnotc $nick "I told $tellnick about \002$dbfact\002."
+			}
+			putlog "FAQ: Privately send keyword \"\002$fact\002\" to $tellnick by $nick ($idx)"
+			close $database
+			return 0
+		}
+	}
+	close $database
+	putnotc $nick "I don't have the keyword \002$fact\002 in my database."
+	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
+		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]addword \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+	} else {
+		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
+	}
+	return 0
 }
 
 #######
