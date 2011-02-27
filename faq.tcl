@@ -155,6 +155,7 @@ bind pub - "[string trim $faq(cmdchar)]close-faq" faq:close-faqdb
 bind pub - "[string trim $faq(cmdchar)]open-faq" faq:open-faqdb
 bind pub - "[string trim $faq(cmdchar)]faq-help" faq:faq_howto
 bind pub - "[string trim $faq(cmdchar)]index" faq:faq_index
+bind pub - "see" faq:explain_fact
 
 #########
 # PROCS #
@@ -269,9 +270,9 @@ proc faq:explain_fact {nick idx handle channel args} {
 		}
 	}
 	close $database
-	putnotc $nick "I don't entry in my databse for the keyword, \002$fact\002."
+	putnotc $nick "I don't have an entry in my databse for the keyword, \002$fact\002.  For a link to a list of entries, check the keyword \002index\002."
 	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
-		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]addword \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
 	} else {
 		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
 	}
@@ -327,9 +328,9 @@ proc faq:tell_fact {nick idx handle channel args} {
 		}
 	}
 	close $database
-	putnotc $nick "I don't have the keyword \002$fact\002 in my database."
+	putnotc $nick "I don't have the keyword \002$fact\002 in my database.  For a list of entries, consult the \002index\002."
 	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
-		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]addword \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
 	} else {
 		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
 	}
@@ -359,11 +360,11 @@ proc faq:add_fact {nick idx handle channel args} {
 	set database [open $faq(database) r]
 	if {($fact=="")} {
 		putnotc $nick "Left parameters."
-		putnotc $nick "use: [string trim $faq(cmdchar)]addword \002keyword\002[string trim $faq(splitchar)]definition"
+		putnotc $nick "use: [string trim $faq(cmdchar)]+ \002keyword\002[string trim $faq(splitchar)]definition"
 		return 0
 	} elseif {($definition=="")} {
 		putnotc $nick "Left parameters."
-		putnotc $nick "use: [string trim $faq(cmdchar)]addword keyword[string trim $faq(splitchar)]\002definition\002"
+		putnotc $nick "use: [string trim $faq(cmdchar)]+ keyword[string trim $faq(splitchar)]\002definition\002"
 		return 0
 	}
 	while {![eof $database]} {
@@ -496,7 +497,7 @@ proc faq:modify_fact {nick idx handle channel args} {
 	close $databaseout
 	if {$found != 1} {
 		putnotc $nick "\002$fact\002 not found in my database"
-		putnotc $nick "If you want to add the fact to the database use: [string trim $faq(cmdchar)]addword $fact[string trim $faq(splitchar)]\002description\002"
+		putnotc $nick "If you want to add the fact to the database use: [string trim $faq(cmdchar)]+ $fact[string trim $faq(splitchar)]\002description\002"
 	}
 }
 
@@ -582,9 +583,9 @@ proc faq:self_fact {nick idx handle channel args} {
 		}
 	}
 	close $database
-	putnotc $nick "I don't entry in my databse for the keyword, \002$fact\002."
+	putnotc $nick "I don't have an entry in my databse for the keyword, \002$fact\002.  For a list of entries, consult keyword \002index\002."
 	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
-		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]addword \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
 	} else {
 		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
 	}
@@ -647,9 +648,9 @@ proc faq:send_fact {nick idx handle channel args} {
 		}
 	}
 	close $database
-	putnotc $nick "I don't have the keyword \002$fact\002 in my database."
+	putnotc $nick "I don't have the keyword \002$fact\002 in my database.  For a list of entries, consult the keyword \002index\002."
 	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
-		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]addword \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
 	} else {
 		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
 	}
