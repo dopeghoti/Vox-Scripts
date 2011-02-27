@@ -6,7 +6,11 @@
 #
 # ChangeLog
 #
+# 20110227 - More flood controls
+#          - Will not repeat the same FAQ with X seconds.
+# 
 # 20110221 - Incorporated deflood.tcl
+#          - Flood controls
 # 
 # 20030106 - Changed Name to faq.tcl (changed purpose)
 #          - Changed some commands
@@ -119,6 +123,10 @@ set faq(channels) "##VoxelHead #mcbots #MineCraftHelp #Minecraft"
 # # Flood protection; default three in sixty seconds
 set flood 4:180
 
+# Flood protection for individual FAQs:
+# Number of seconds withing which to prevent repeat FAQs.
+set toofasttime 10
+
 # if ![info exists ::lastFAQ] {set ::lastFAQ 0}
 
 #  set max [lindex [split $flood ":"] 0]; set time [lindex [split $flood ":"] 1]
@@ -126,6 +134,7 @@ set flood 4:180
 # if {$::lastFAQ >= $max} {set type notice; set dest $nick} \
 # 	else {set type privmsg; set dest $chan}
 
+set toofast(stub) "stub"
 
 #################
 # END OF CONFIG #
@@ -138,7 +147,7 @@ set flood 4:180
 # Initial Status of the Database (0 = open 1 = closed)
 set faq(status) 0
 # Current Version of the Database
-set faq(version) "20110220 v2.15"
+set faq(version) "20110227 v2.17"
 
 #########
 # BINDS #
@@ -209,6 +218,9 @@ proc faq:open-faqdb {nick idx handle channel args} {
 proc faq:explain_fact {nick idx handle channel args} {
 	global faq
 	global flood
+	global fast
+	global toofasttime
+	global toofast
 
 	if ![info exists ::lastFAQ] {set ::lastFAQ 0}
 
@@ -220,7 +232,7 @@ proc faq:explain_fact {nick idx handle channel args} {
 	if {$::lastFAQ>=$fmax} {
 		set otype notice
 		set odest $nick
-		putnotc $nick "Flood prevention has cause my answer to be in a CTCP NOTICE instead of in-channel."
+		putnotc $nick "Flood prevention has caused my answer to be in a CTCP NOTICE instead of in-channel."
 	} else {
 		set otype privmsg
 		set odest $channel
@@ -247,34 +259,41 @@ proc faq:explain_fact {nick idx handle channel args} {
 		#  putmsg $nick "Syntax: [string trim $faq(cmdchar)] \002keyword\002"
 		return 0
 	}
-	set database [open $faq(database) r]
-	set dbline ""
-	while {![eof $database]} {
-		gets $database dbline
-		set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ]] 
-		set dbdefinition [string range $dbline [expr [string length $fact]+1] end]
-		if {$dbfact==$fact} {
-			if {[string match -nocase "*$faq(newline)*" $dbdefinition]} {
-				set out1 [lindex [split $dbdefinition $faq(newline)] 0]
-				set out2 [string range $dbdefinition [expr [string length $out1]+2] end]
-#				putmsg $channel "\002$fact\002: $out1"
-#				putmsg $channel "\002$fact\002: $out2"
-				puthelp "$otype $odest :\002$fact\002: $out1"
-				puthelp "$otype $odest :\002$fact\002: $out2"
-			} else { 
-#				putmsg $channel "\002$fact\002: $dbdefinition"
-				puthelp "$otype $odest :\002$fact\002: $dbdefinition"
+
+	if ![info exists toofast($fact)] {
+		set toofast($fact) "yes"
+		utimer $toofasttime [list unset toofast($fact)]
+		set database [open $faq(database) r]
+		set dbline ""
+		while {![eof $database]} {
+			gets $database dbline
+			set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ]] 
+			set dbdefinition [string range $dbline [expr [string length $fact]+1] end]
+			if {$dbfact==$fact} {
+				if {[string match -nocase "*$faq(newline)*" $dbdefinition]} {
+					set out1 [lindex [split $dbdefinition $faq(newline)] 0]
+					set out2 [string range $dbdefinition [expr [string length $out1]+2] end]
+	#				putmsg $channel "\002$fact\002: $out1"
+	#				putmsg $channel "\002$fact\002: $out2"
+					puthelp "$otype $odest :\002$fact\002: $out1"
+					puthelp "$otype $odest :\002$fact\002: $out2"
+				} else { 
+	#				putmsg $channel "\002$fact\002: $dbdefinition"
+					puthelp "$otype $odest :\002$fact\002: $dbdefinition"
+				}
+				close $database
+				return 0
 			}
-			close $database
-			return 0
 		}
-	}
-	close $database
-	putnotc $nick "I don't have an entry in my databse for the keyword, \002$fact\002.  For a link to a list of entries, check the keyword \002index\002."
-	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
-		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+		close $database
+		putnotc $nick "I don't have an entry in my databse for the keyword, \002$fact\002.  For a link to a list of entries, check the keyword \002index\002."
+		if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
+			putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+		} else {
+			#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
+		}
 	} else {
-		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
+		putnotc $nick "I just said that less than $toofasttime seconds ago."
 	}
 	return 0
 }
