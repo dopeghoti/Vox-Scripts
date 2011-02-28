@@ -294,12 +294,17 @@ proc faq:explain_fact {nick idx handle channel args} {
 		}
 	} else {
 		putnotc $nick "I just said that less than $toofasttime seconds ago."
+		putlog "Suppressing duplication flood of $fact by $nick."
 	}
 	return 0
 }
 
 proc faq:tell_fact {nick idx handle channel args} {
 	global faq
+	global flood
+	global fast
+	global toofasttime
+	global toofast
 	
 	#	Flood control
 	if {![checkUser $nick $channel]} {return}
@@ -326,32 +331,39 @@ proc faq:tell_fact {nick idx handle channel args} {
 		putnotc $nick "Syntax: [string trim $faq(cmdchar)]faq nick \002keyword\002"
 		return 0
 	}
-	set database [open $faq(database) r]
-	set dbline ""
-	while {![eof $database]} {
-		gets $database dbline
-		set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ] ]
-		set dbdefinition [string range $dbline [expr [string length $fact]+1] end]
-		if {$dbfact==$fact} {
-			if {[string match -nocase "*$faq(newline)*" $dbdefinition]} {
-				set out1 [lindex [split $dbdefinition "$faq(newline)"] 0]
-				set out2 [string range $dbdefinition [expr [string length $out1]+2] end]
-				putmsg $channel "\002$tellnick\002: ($dbfact) $out1"
-				putmsg $channel "\002$tellnick\002: ($dbfact) $out2"
-			} else {
-				putmsg $channel "\002$tellnick\002: ($dbfact) $dbdefinition"
+	if ![info exists toofast($fact)] {
+		set toofast($fact) "yes"
+		utimer $toofasttime [list unset toofast($fact)]
+		set database [open $faq(database) r]
+		set dbline ""
+		while {![eof $database]} {
+			gets $database dbline
+			set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ] ]
+			set dbdefinition [string range $dbline [expr [string length $fact]+1] end]
+			if {$dbfact==$fact} {
+				if {[string match -nocase "*$faq(newline)*" $dbdefinition]} {
+					set out1 [lindex [split $dbdefinition "$faq(newline)"] 0]
+					set out2 [string range $dbdefinition [expr [string length $out1]+2] end]
+					putmsg $channel "\002$tellnick\002: ($dbfact) $out1"
+					putmsg $channel "\002$tellnick\002: ($dbfact) $out2"
+				} else {
+					putmsg $channel "\002$tellnick\002: ($dbfact) $dbdefinition"
+				}
+				putlog "FAQ: Send keyword \"\002$fact\002\" to $tellnick by $nick ($idx)"
+				close $database
+				return 0
 			}
-			putlog "FAQ: Send keyword \"\002$fact\002\" to $tellnick by $nick ($idx)"
-			close $database
-			return 0
 		}
-	}
-	close $database
-	putnotc $nick "I don't have the keyword \002$fact\002 in my database.  For a list of entries, consult the \002index\002."
-	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
-		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+		close $database
+		putnotc $nick "I don't have the keyword \002$fact\002 in my database.  For a list of entries, consult the \002index\002."
+		if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
+			putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
+		} else {
+			#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
+		}
 	} else {
-		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
+		putnotc $nick "I just said that less than $toofasttime seconds ago."
+		putlog "Suppressing duplication flood of $fact by $nick."
 	}
 	return 0
 }
@@ -608,6 +620,7 @@ proc faq:self_fact {nick idx handle channel args} {
 	} else {
 		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
 	}
+	putlog "$nick asked for information on $fact for emself."
 	return 0
 }
 
@@ -673,6 +686,7 @@ proc faq:send_fact {nick idx handle channel args} {
 	} else {
 		#  putnotc $nick "If you're looking for a TCL-Script try http://www.egghelp.org/cgi-bin/tcl_archive.tcl?strings=$fact"
 	}
+	putlog "$nick sent info on $fact to $tellnick."
 	return 0
 }
 
