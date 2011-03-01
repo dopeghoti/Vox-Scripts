@@ -560,6 +560,7 @@ proc faq:faq_howto {nick idx handle channel args} {
 
 proc faq:faq_index {nick idx handle channel args} {
 	global faq
+	if {![checkUser $nick $chan]} {return}
 	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
 		return 0
 	}
