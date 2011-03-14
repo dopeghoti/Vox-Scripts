@@ -1,26 +1,10 @@
-# CV Script (Channel Voter Script)
-# Written by Loki` (#FTP4Warez on EFNet)
+# Vote script
+
+# Initial version by Loki`
+#
+# Completely rewritten by DopeGhoti © 2011
 #
 #Type '/msg <botnick> vote help' for commands
-
-#Version History:
-#
-#10/02/2001 - 1.0	Initial Release
-#10/05/2001 - 1.1b	Added support for rehashing without losing current vote
-#10/21/2001 - 1.1	Added !endvote and !time chan commands
-#11/16/2001 - 1.12	Added Tie Breaking support (extends time)
-#			Added support for voter selection (S, o, v or -) 
-#			(- means anyone, S for senior vote (user must have +S flag))
-#			Commands added:
-#				!seniorvote
-#				!opvote (default)
-#				!voicevote
-#				!anyvote
-#			Disallowed voting using a bot (Thanks, redstar, for the ..uhm 'hint')
-#11/24/2001 - 1.13	Added hostmasking to identify voters (No more dialup user vote reminders)
-#12/11/2001 - 1.14	Fixed the "Time Left" counter.  It was displaying the full time throughout the vote
-#			Fixed the hostmasking support (was causing ppl to not be able to vote, heh)
-#12/20/2001 - 1.15	Fixed a bug where the bot msg'd people to vote who already voted
 
 #	Channel flag that must be st for this script to be active in a channel
 set chanflag "votebox"
@@ -29,7 +13,7 @@ setudef flag $chanflag
 ###------------------------ Vote Bindings ------------------------###
 bind pub o|o ".startvote" vote_start
 bind pub o|o ".endvote" vote_results
-bind pub o|o ".seniorvote" senior_vote
+#bind pub o|o ".seniorvote" senior_vote
 bind pub o|o ".opvote" op_vote
 bind pub o|o ".voicevote" voice_vote
 bind pub o|o ".anyvote" any_vote
