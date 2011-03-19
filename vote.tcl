@@ -11,17 +11,16 @@ set chanflag "votebox"
 setudef flag $chanflag
 
 ###------------------------ Vote Bindings ------------------------###
-bind pub o|o ".startvote" vote_start
+bind pub - ".startvote" vote_start
 bind pub o|o ".endvote" vote_results
 #bind pub o|o ".seniorvote" senior_vote
 bind pub o|o ".opvote" op_vote
 bind pub o|o ".voicevote" voice_vote
 bind pub o|o ".anyvote" any_vote
-bind pub o|o ".vote" vote_update
-bind pub o|o ".time" vote_timer
-bind msg o|o vote vote_vote
+bind pub - ".vote" vote_update
+bind pub - ".time" vote_timer
+bind msg - vote vote_vote
 bind join o|o * vote_reminder
-
 
 ###------------------------ Detect and remove old voting data on startup ------------------------###
 if {![info exists voting]} {
@@ -246,8 +245,8 @@ proc vote_update {nick mask hand chan text} {
 	if { [ channel get $chan $chanflag ] } {
 		if {[string match "yes" $voting] == 1 && [string match $chan $voting_chan] == 1} {
 			puthelp "PRIVMSG $chan :\002VoteBox\002: Voting in session for: \002$vote_topic\002"
-			puthelp "PRIVMSG $chan :\002VoteBox\002: Yes: \002$vote_yes\002"
-			puthelp "PRIVMSG $chan :\002VoteBox\002: No: \002$vote_no\002"
+#			puthelp "PRIVMSG $chan :\002VoteBox\002: Yes: \002$vote_yes\002"
+#			puthelp "PRIVMSG $chan :\002VoteBox\002: No: \002$vote_no\002"
 			puthelp "PRIVMSG $chan :\002VoteBox\002: [duration [expr (([unixtime] - $vote_timestart) - $vote_time) * -1]] left to vote"
 		} elseif {[string match "no" $voting] == 1 && [info exists vote_topic] == 1} {
 			puthelp "PRIVMSG $chan :\002VoteBox\002: Last vote was for: $vote_topic"
@@ -262,26 +261,23 @@ proc vote_update {nick mask hand chan text} {
 proc vote_statlist {nick} {
 	global chanflag voting_chan vote_yes vote_no vote_topic voting botnick
 	# Make sure this is a valid channel
-	if { [ channel get $chan $chanflag ] } {
+#	if { [ channel get $chan $chanflag ] } {
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Current Voting Stats for: \002$vote_topic\002"
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Yes: \002$vote_yes\002"
 		puthelp "PRIVMSG $nick :\002VoteBox\002: No:  \002$vote_no\002"
 		puthelp "PRIVMSG $nick :Type '/msg $botnick vote comments' to view current voter comments"
-	}
+#	}
 }
 
 ###------------------------ Voting Comments ------------------------###
 proc vote_commentlist {nick} {
 	global chanflag voting_chan vote_yes vote_no vote_topic voting vote_comments
-	# Make sure this is a valid channel
-	if { [ channel get $chan $chanflag ] } {
-		if {![info exists vote_comments]} {
-			puthelp "NOTICE $nick :\002VoteBox\002: No comments made."
-			return 0
-		}
-		foreach comment [array names vote_comments] {
-			puthelp "PRIVMSG $nick :\002\| $comment \|\002 $vote_comments($comment)"
-		}
+	if {![info exists vote_comments]} {
+		puthelp "NOTICE $nick :\002VoteBox\002: No comments made."
+		return 0
+	}
+	foreach comment [array names vote_comments] {
+		puthelp "PRIVMSG $nick :\002\| $comment \|\002 $vote_comments($comment)"
 	}
 }
 
@@ -321,11 +317,11 @@ proc vote_helplist {nick} {
 proc tie_breaker {} {
 	global chanflag voting_chan vote_topic botnick vote_timestart vote_time
 	# Make sure this is a valid channel
-	if { [ channel get $chan $chanflag ] } {
+	if { [ channel get $voting_chan $chanflag ] } {
 		if {$vote_time > 7200} {
 			set vote_time 7200
 			set vote_timestart [unixtime]
-			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Tie Detected!! Extending voting time 2 Hours! Type !endvote to end this vote early"
+			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Tie Detected! Extending voting time two hours. Type .endvote to end this vote early"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Vote open on: \002$vote_topic\002"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for more commands"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: [duration $vote_time] left to vote"
@@ -333,7 +329,7 @@ proc tie_breaker {} {
 		} else {
 			set vote_time 1800
 			set vote_timestart [unixtime]
-			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Tie Detected!! Extending voting time 30 Minutes! Type !endvote to end this vote early"
+			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Tie Detected! Extending voting time thirty minutes. Type .endvote to end this vote early"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Vote open on: \002$vote_topic\002"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for more commands"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: [duration $vote_time] left to vote"
@@ -345,14 +341,11 @@ proc tie_breaker {} {
 
 ###------------------------ Time Remaining Warning ------------------------###
 proc vote_warning {} {
-	global chanflag voting_chan vote_topic botnick vote_timestart vote_time voting
-	# Make sure this is a valid channel
-	if { [ channel get $chan $chanflag ] } {
-		if {$voting == "yes"} {
-			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Vote open on: \002$vote_topic\002"
-			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for more commands"
-			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: [duration [expr (([unixtime] - $vote_timestart) - $vote_time) * -1]] left to vote"
-		}
+	global chanflag voting_chan vote_topic botnick voting vote_timestart vote_time voted_people
+	if {$voting == "yes"} {
+		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Voting polls are still open on: \002$vote_topic\002"
+		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for more commands"
+		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: [duration [expr (([unixtime] - $vote_timestart) - $vote_time) * -1]] left to vote"
 	}
 }
 
