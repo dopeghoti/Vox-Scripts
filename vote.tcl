@@ -37,7 +37,7 @@ if {![info exists voting]} {
 
 ###------------------------ Start the vote ------------------------###
 proc vote_start {nick mask hand chan text} {
-	global chanflag voting voting_chan botnick vote_topic vote_no vote_yes voted_people vote_time vote_timestart vote_comments voteset
+	global chanflag voting voting_chan botnick vote_topic vote_no vote_yes vote_abstain voted_people vote_time vote_timestart vote_comments voteset
 	# Make sure this is a valid channel
 	if { [ channel get $chan $chanflag ] } {
 		if {$voting == "yes"} {
@@ -62,10 +62,11 @@ proc vote_start {nick mask hand chan text} {
 			}
 			set vote_yes 0
 			set vote_no 0
+			set vote_abstain 0
 			set vote_topic [lrange $text 1 end]
 			putlog "\002VoteBox\002: $nick on $chan started voting on $vote_topic"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Now voting on: \002$vote_topic\002"
-			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Please place your votes!  '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for assistance."
+			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Please place your votes!  '/msg $botnick vote <yes/no/abstain> \[comments\]' or '/msg $botnick vote help' for assistance."
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002  \002[duration $vote_time]\002 left!"
 			set vote_timer4th [expr $vote_time / 4]
 			if {$vote_time > 1200} {
@@ -85,7 +86,7 @@ proc vote_start {nick mask hand chan text} {
 
 ###------------------------ Process vote triggers (yes/no/comment) ------------------------###
 proc vote_vote {nick mask hand text} {
-	global chanflag vote_yes vote_no voted_people voting vote_comments botnick voting_chan
+	global chanflag vote_yes vote_no vote_abstain voted_people voting vote_comments botnick voting_chan
 	if {[string tolower [lindex $text 0]] == "help"} {
 		vote_helplist $nick
 		return 0
@@ -123,6 +124,14 @@ proc vote_vote {nick mask hand text} {
 		}
 		set voted_people($mask) 1
 		return 0
+	} elseif {[string tolower [lindex $text 0]] == "abstain"} {
+		puthelp "NOTICE $nick :\002VoteBox\002: Your lack of a vote has been counted!  Thanks for not really participating in our fake democracy, $nick!"
+		set vote_abstain [incr vote_abstain]
+		if {[lrange $text 1 end] != ""} {
+			set vote_comments($nick) [lrange $text 1 end]
+		}
+		set voted_people($mask) 1
+		return 0
 	} else {
 		puthelp "NOTICE $nick :\002\VoteBox\002: Please type '/msg $botnick vote help' for assistance."
 	}
@@ -145,7 +154,7 @@ proc vote_vote {nick mask hand text} {
 
 ###------------------------ Opvote Trigger ------------------------###
 proc op_vote {nick mask hand chan text} {
-	global chanflag voting_chan vote_yes vote_no vote_topic voting botnick
+	global chanflag voting_chan vote_yes vote_no vote_abstain vote_topic voting botnick
 	# Make sure this is a valid channel
 	if { [ channel get $chan $chanflag ] } {
 		vote_unbind
@@ -154,13 +163,13 @@ proc op_vote {nick mask hand chan text} {
 		bind msg o|o vote vote_vote
 		bind join o|o * vote_reminder
 		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: \002Voting now open for ops only!! \(Make up your mind, already!\)\002"
-		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for more commands"
+		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no/abstain> \[comments\]' or '/msg $botnick vote help' for more commands"
 	}
 }
 
 ###------------------------ Voicevote Trigger ------------------------###
 proc voice_vote {nick mask hand chan text} {
-	global chanflag voting_chan vote_yes vote_no vote_topic voting botnick
+	global chanflag voting_chan vote_yes vote_no vote_abstain vote_topic voting botnick
 	# Make sure this is a valid channel
 	if { [ channel get $chan $chanflag ] } {
 		vote_unbind
@@ -169,13 +178,13 @@ proc voice_vote {nick mask hand chan text} {
 		bind msg vo|vo vote vote_vote
 		bind join vo|vo * vote_reminder
 		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: \002Voting now open for all +v people!!\002"
-		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for more commands"
+		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no/abstain> \[comments\]' or '/msg $botnick vote help' for more commands"
 	}
 }
 
 ###------------------------ Anyvote Trigger ------------------------###
 proc any_vote {nick mask hand chan text} {
-	global chanflag voting_chan vote_yes vote_no vote_topic voting botnick
+	global chanflag voting_chan vote_yes vote_no vote_abstain vote_topic voting botnick
 	# Make sure this is a valid channel
 	if { [ channel get $chan $chanflag ] } {
 		vote_unbind
@@ -184,7 +193,7 @@ proc any_vote {nick mask hand chan text} {
 		bind msg - vote vote_vote
 		bind join - * vote_reminder
 		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: \002Voting now open for anyone!!\002"
-		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for more commands"
+		puthelp "PRIVMSG $voting_chan :\002VoteBox\002: '/msg $botnick vote <yes/no/abstain> \[comments\]' or '/msg $botnick vote help' for more commands"
 	}
 }
 
@@ -232,15 +241,16 @@ proc vote_results {nick mask hand chan text} {
 			}
 			putlog "\002VoteBox\002:  Vote finished: $vote_topic Yes: $vote_yes  No: $vote_no"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Voting results for: \002$vote_topic\002"
-			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Yes: \002$vote_yes\002"
-			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: No: \002$vote_no\002"
+			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Yeas: \002$vote_yes\002"
+			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Nays: \002$vote_no\002"
+			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Abstentions: \002$vote_abstain\002"
 		}
 	}
 }
 
 ###------------------------ Display Current/Last Vote ------------------------###
 proc vote_update {nick mask hand chan text} {
-	global chanflag voting_chan vote_yes vote_no vote_topic voting voteset vote_timestart vote_time
+	global chanflag voting_chan vote_yes vote_no vote_abstain vote_topic voting voteset vote_timestart vote_time
 	# Make sure this is a valid channel
 	if { [ channel get $chan $chanflag ] } {
 		if {[string match "yes" $voting] == 1 && [string match $chan $voting_chan] == 1} {
@@ -250,7 +260,7 @@ proc vote_update {nick mask hand chan text} {
 			puthelp "PRIVMSG $chan :\002VoteBox\002: [duration [expr (([unixtime] - $vote_timestart) - $vote_time) * -1]] left to vote"
 		} elseif {[string match "no" $voting] == 1 && [info exists vote_topic] == 1} {
 			puthelp "PRIVMSG $chan :\002VoteBox\002: Last vote was for: $vote_topic"
-			puthelp "PRIVMSG $chan :\002VoteBox\002: Final tally was: Yes: $vote_yes | No: $vote_no"
+			puthelp "PRIVMSG $chan :\002VoteBox\002: Final tally was: Yes: $vote_yes | No: $vote_no | Abstain: $vote_abstain"
 		} else {
 			puthelp "PRIVMSG $chan :\002VoteBox\002: No prior votes recorded for this channel"
 		}
@@ -259,12 +269,13 @@ proc vote_update {nick mask hand chan text} {
 
 ###------------------------ Voting Stats ------------------------###
 proc vote_statlist {nick} {
-	global chanflag voting_chan vote_yes vote_no vote_topic voting botnick
+	global chanflag voting_chan vote_yes vote_no vote_abstain vote_topic voting botnick
 	# Make sure this is a valid channel
 #	if { [ channel get $chan $chanflag ] } {
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Current Voting Stats for: \002$vote_topic\002"
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Yes: \002$vote_yes\002"
 		puthelp "PRIVMSG $nick :\002VoteBox\002: No:  \002$vote_no\002"
+		puthelp "PRIVMSG $nick :\002VoteBox\002: Abstain:  \002$vote_abstain\002"
 		puthelp "PRIVMSG $nick :Type '/msg $botnick vote comments' to view current voter comments"
 #	}
 }
@@ -289,6 +300,7 @@ proc vote_helplist {nick} {
 		puthelp "PRIVMSG $nick :\002VoteBox\002: \002Voting Commands \(For during a voting session\)\002:"
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Type: '/msg $botnick vote yes \[comment\]' for a 'yes' vote."
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Type: '/msg $botnick vote no \[comment\]' for a 'no' vote."
+		puthelp "PRIVMSG $nick :\002VoteBox\002: Type: '/msg $botnick vote abstain \[comment\]' for an 'abstain' vote."
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Type: '/msg $botnick vote stats' for current tallied votes."
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Type: '/msg $botnick vote comments' to view current comments."
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Type: '.endvote' to end a voting session early."
@@ -357,7 +369,7 @@ proc vote_reminder {nick mask hand chan} {
 		set mask [maskhost $mask]
 		if {[string match $chan $voting_chan] == 1 && [info exists voted_people($mask)] == 0 && [string match "yes" $voting] == 1} {
 			puthelp "NOTICE $nick :\002VoteBox\002: Vote open on: \002$vote_topic\002"
-			puthelp "NOTICE $nick :\002VoteBox\002: '/msg $botnick vote <yes/no> \[comments\]' or '/msg $botnick vote help' for more assistance."
+			puthelp "NOTICE $nick :\002VoteBox\002: '/msg $botnick vote <yes/no/abstain> \[comments\]' or '/msg $botnick vote help' for more assistance."
 			puthelp "NOTICE $nick :\002VoteBox\002: [duration [expr (([unixtime] - $vote_timestart) - $vote_time) * -1]] left to vote"
 		}
 	}
