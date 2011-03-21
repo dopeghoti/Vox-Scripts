@@ -240,7 +240,7 @@ proc vote_results {nick mask hand chan text} {
 				killutimer $voteset(t4)
 				killutimer $voteset(t5)
 			}
-			putlog "\002VoteBox\002:  Vote finished: $vote_topic Yes: $vote_yes  No: $vote_no"
+			putlog "\002VoteBox\002:  Vote finished: $vote_topic Yes: $vote_yes  No: $vote_no Abstain: $vote_abstain"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Voting results for: \002$vote_topic\002"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Yeas: \002$vote_yes\002"
 			puthelp "PRIVMSG $voting_chan :\002VoteBox\002: Nays: \002$vote_no\002"
