@@ -19,6 +19,7 @@ bind pub o|o ".voicevote" voice_vote
 bind pub o|o ".anyvote" any_vote
 bind pub - ".vote" vote_update
 bind pub - ".time" vote_timer
+bind pub - ".help" vote_chanhelp
 bind msg - vote vote_vote
 bind join o|o * vote_reminder
 
@@ -267,6 +268,17 @@ proc vote_update {nick mask hand chan text} {
 	}
 }
 
+
+###------------------------ Asking for help ----------------------###
+proc vote_chanhelp {nick mask hand chan test} {
+	global chanflag
+	# Make sure this is a valid channel
+	if { [ channel get $chan $chanflag ] } {
+		vote_helplist $nick
+		return 0
+	}
+}
+
 ###------------------------ Voting Stats ------------------------###
 proc vote_statlist {nick} {
 	global chanflag voting_chan vote_yes vote_no vote_abstain vote_topic voting botnick
@@ -314,9 +326,9 @@ proc vote_helplist {nick} {
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Timespans is set as follows:"
 		puthelp "PRIVMSG $nick :\002VoteBox\002: XXm \= xxMinutes"
 		puthelp "PRIVMSG $nick :\002VoteBox\002: XXh \= xxHours"
-		puthelp "PRIVMSG $nick :\002VoteBox\002: Example: .startvote 24h Should we play a game\\? for a 24 hour vote."
-		puthelp "PRIVMSG $nick :\002VoteBox\002: Example: .startvote 200m Should we play a game\\? for a 200 minute vote."
-		puthelp "PRIVMSG $nick :\002VoteBox\002: !!!NOT VALID!!!: .startvote 24h 20m Should we play a game\\?."
+		puthelp "PRIVMSG $nick :\002VoteBox\002: Example: .startvote 24h Should we play a game? for a 24 hour vote."
+		puthelp "PRIVMSG $nick :\002VoteBox\002: Example: .startvote 200m Should we play a game? for a 200 minute vote."
+		puthelp "PRIVMSG $nick :\002VoteBox\002: !!!NOT VALID!!!: .startvote 24h 20m Should we play a game?."
 		puthelp "PRIVMSG $nick :\002VoteBox\002: Type: '.vote' to display previous voting session's outcome."
 	}
 	#	Commands valid at all times
