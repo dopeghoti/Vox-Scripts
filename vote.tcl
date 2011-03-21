@@ -223,7 +223,7 @@ proc vote_unbind {} {
 
 ###------------------------ Display Results ------------------------###
 proc vote_results {nick mask hand chan text} {
-	global chanflag voting_chan vote_yes vote_no vote_topic voting voteset
+	global chanflag voting_chan vote_yes vote_no vote_abstain vote_topic voting voteset
 	# Make sure this is a valid channel
 	if { [ channel get $chan $chanflag ] } {
 		if {$voting == "yes"} {
