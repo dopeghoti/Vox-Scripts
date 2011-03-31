@@ -164,7 +164,7 @@ bind pub - "[string trim $faq(cmdchar)]close-faq" faq:close-faqdb
 bind pub - "[string trim $faq(cmdchar)]open-faq" faq:open-faqdb
 bind pub - "[string trim $faq(cmdchar)]faq-help" faq:faq_howto
 bind pub - "[string trim $faq(cmdchar)]index" faq:faq_index
-bind pub - "see" faq:explain_fact
+#bind pub - "see" faq:explain_fact
 
 #########
 # PROCS #
