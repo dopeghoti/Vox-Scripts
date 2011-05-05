@@ -96,6 +96,10 @@
 # SETS #
 ########
 
+#	Channel flag that must be st for this script to be active in a channel
+set faq(chanflag) "mcfaq"
+setudef flag $chanflag
+
 # File will be created in your eggdrop dir unless you specify a path
 # Ex. set faq(database) "/path/to/faqdatabase"
 set faq(database) "faqdatabase"
@@ -118,7 +122,9 @@ set faq(glob_flag) "M"
 set faq(chan_flag) ""
 
 # Channels the FAQ is active on
-set faq(channels) "##VoxelHead #mcbots #MineCraftHelp #Minecraft"
+#set faq(channels) "##VoxelHead #mcbots #MineCraftHelp #Minecraft"
+#
+# Deprecated, use mcfaq channel flag
 
 # # Flood protection; default three in sixty seconds
 set flood 4:180
@@ -171,10 +177,12 @@ bind pub - "[string trim $faq(cmdchar)]index" faq:faq_index
 #########
 
 proc faq:close-faqdb {nick idx handle channel args} {
-	global faq
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } { 
-		return 0
+	global faq chanflag
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
 	}
+
 	if {![matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
 		putnotc $nick "You can't change the faq-database status."
 		return 0
@@ -193,10 +201,12 @@ proc faq:close-faqdb {nick idx handle channel args} {
 }
 
 proc faq:open-faqdb {nick idx handle channel args} {
-	global faq
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
+	global faq chanflag
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
 	}
+
 	if {![matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
 		putnotc $nick "You can't change the faq-database status."
 		return 0
@@ -216,11 +226,16 @@ proc faq:open-faqdb {nick idx handle channel args} {
 
 
 proc faq:explain_fact {nick idx handle channel args} {
-	global faq
+	global faq chanflag
 	global flood
 	global fast
 	global toofasttime
 	global toofast
+
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
+	}
 
 	if ![info exists ::lastFAQ] {set ::lastFAQ 0}
 
@@ -242,9 +257,6 @@ proc faq:explain_fact {nick idx handle channel args} {
 	incr ::lastFAQ
 	utimer $ftime [list incr ::lastFAQ -1]
 
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
-	}
 	if {$faq(status) == 1} { 
 		putnotc $nick "The faq-database is \002closed\002."
 		return 0 
@@ -300,18 +312,20 @@ proc faq:explain_fact {nick idx handle channel args} {
 }
 
 proc faq:tell_fact {nick idx handle channel args} {
-	global faq
+	global faq chanflag
 	global flood
 	global fast
 	global toofasttime
 	global toofast
 	
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
+	}
+
 	#	Flood control
 	if {![checkUser $nick $channel]} {return}
 
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
-	}
 	if {$faq(status)==1} { 
 		putnotc $nick "The faq-database is \002closed\002."
 		return 0 
@@ -369,10 +383,12 @@ proc faq:tell_fact {nick idx handle channel args} {
 }
 
 proc faq:add_fact {nick idx handle channel args} {
-	global faq
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
+	global faq chanflag
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
 	}
+
 	if {$faq(status)==1} {
 		putnotc $nick "The faq-database is \002closed\002."
 		return 0
@@ -418,10 +434,12 @@ proc faq:add_fact {nick idx handle channel args} {
 }
 
 proc faq:delete_fact {nick idx handle channel args} {
-	global faq
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
+	global faq chanflag
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
 	}
+
 	if {$faq(status)==1} {
 		putnotc $nick "The faq-database is \002closed\002."
 		return 0
@@ -466,10 +484,12 @@ proc faq:delete_fact {nick idx handle channel args} {
 }
 
 proc faq:modify_fact {nick idx handle channel args} {
-	global faq
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
+	global faq chanflag
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
 	}
+
 	if {$faq(status)==1} {
 		putnotc $nick "The faq-database is \002closed\002."
 		return 0
@@ -533,10 +553,12 @@ proc faq:modify_fact {nick idx handle channel args} {
 }
 
 proc faq:faq_howto {nick idx handle channel args} {
-	global faq
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
+	global faq chanflag
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
 	}
+
 	putnotc $nick "Help commands for FAQ Database $faq(version)"
 	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
 		if {$faq(status)==0} {
@@ -559,11 +581,13 @@ proc faq:faq_howto {nick idx handle channel args} {
 }
 
 proc faq:faq_index {nick idx handle channel args} {
-	global faq
-	if {![checkUser $nick $chan]} {return}
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
+	global faq chanflag
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
 	}
+
+	if {![checkUser $nick $chan]} {return}
 	putnotc $nick "A list of FAQ keywords can be seen at http://mchelp.darksigns.net/faqindex"
 	if {$faq(status)==1} {
 		putnotc $nick "The faq-database is \002closed\002."
@@ -571,13 +595,15 @@ proc faq:faq_index {nick idx handle channel args} {
 }
 
 proc faq:self_fact {nick idx handle channel args} {
-	global faq
+	global faq chanflag
 	set otype notice
 	set odest $nick
 
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
 	}
+
 	if {$faq(status) == 1} { 
 		putnotc $nick "The faq-database is \002closed\002."
 		return 0 
@@ -626,14 +652,16 @@ proc faq:self_fact {nick idx handle channel args} {
 }
 
 proc faq:send_fact {nick idx handle channel args} {
-	global faq
+	global faq chanflag
 	
+
+	if { ! [ channel get $channel ${faq(chanflag)} ] } { 
+		return 0 
+	}
+
 	#	Flood control
 	if {![checkUser $nick $channel]} {return}
 
-	if { [lsearch -exact [split [string tolower $faq(channels)]] [string tolower $channel]] < 0 } {
-		return 0
-	}
 	if {$faq(status)==1} { 
 		putnotc $nick "The faq-database is \002closed\002."
 		return 0 
