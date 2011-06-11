@@ -98,7 +98,7 @@
 
 #	Channel flag that must be st for this script to be active in a channel
 set faq(chanflag) "mcfaq"
-setudef flag $chanflag
+setudef flag ${faq(chanflag)}
 
 # File will be created in your eggdrop dir unless you specify a path
 # Ex. set faq(database) "/path/to/faqdatabase"
@@ -420,7 +420,7 @@ proc faq:add_fact {nick idx handle channel args} {
 		if {$add_fact==$fact} {
 			putnotc $nick "This keyword is already in my database:"
 			putnotc $nick "Is: \002$fact\002 - $definition"
-			putnotc $nick "If you want to modify it just use '[string trim $faq(cmdchar)]modify $fact[string trim $faq(splitchar)]\002definition\002'"
+			putnotc $nick "If you want to modify it just use '[string trim $faq(cmdchar)]~ $fact[string trim $faq(splitchar)]\002definition\002'"
 			close $database
 			return 0
 		}
