@@ -172,6 +172,8 @@ bind pub - "[string trim $faq(cmdchar)]faq-help" faq:faq_howto
 bind pub - "[string trim $faq(cmdchar)]index" faq:faq_index
 #bind pub - "see" faq:explain_fact
 
+bind pub M "[string trim $faq(cmdchar)]!" faq:reset_flood
+
 #########
 # PROCS #
 #########
@@ -224,6 +226,10 @@ proc faq:open-faqdb {nick idx handle channel args} {
 	}
 }
 
+proc faq:reset_flood {nick idx handle channel args } {
+	set ::lastFAQ 0
+	putnotc $nick "Flood counter for FAQ DB reset."
+}
 
 proc faq:explain_fact {nick idx handle channel args} {
 	global faq chanflag
