@@ -364,10 +364,10 @@ proc faq:tell_fact {nick idx handle channel args} {
 				if {[string match -nocase "*$faq(newline)*" $dbdefinition]} {
 					set out1 [lindex [split $dbdefinition "$faq(newline)"] 0]
 					set out2 [string range $dbdefinition [expr [string length $out1]+2] end]
-					putmsg $channel "\002$tellnick\002: ($dbfact) $out1"
-					putmsg $channel "\002$tellnick\002: ($dbfact) $out2"
+					putmsg $channel "\002$tellnick\002: $out1"
+					putmsg $channel "\002$tellnick\002: $out2"
 				} else {
-					putmsg $channel "\002$tellnick\002: ($dbfact) $dbdefinition"
+					putmsg $channel "\002$tellnick\002:  $dbdefinition"
 				}
 				putlog "FAQ: Send keyword \"\002$fact\002\" to $tellnick by $nick ($idx)"
 				close $database
