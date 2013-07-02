@@ -131,7 +131,7 @@ set flood 4:180
 
 # Flood protection for individual FAQs:
 # Number of seconds withing which to prevent repeat FAQs.
-set toofasttime 10
+set toofasttime 15
 
 # if ![info exists ::lastFAQ] {set ::lastFAQ 0}
 
