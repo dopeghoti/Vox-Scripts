@@ -468,7 +468,7 @@ proc next.msg:add {nick uhost handle arg} {
 	  putnotc $nick "$who is allready known in the bot as [nick2hand $who $next(chan)], level [lindex $next(num2name) [next.getlevel $who]]"
 	  if {[next.getlevel $who] < 4} {
 	    if {$lvl == 4 || $lvl == 3 || $lvl == 2 || $lvl == 1} {
-	      next.addflags $who $lvl
+	      next.addflags [nick2hand $who] $lvl
 	      putnotc $nick "Added\002 $who \002as a(n)\002 [lindex $next(num2name) $lvl] \002of $next(chan) to the bot."
 	      putnotc $who "You have been added as a(n)\002 [lindex $next(num2name) $lvl] \002of $next(chan) to the bot."
 	      return 1
@@ -488,7 +488,7 @@ proc next.msg:add {nick uhost handle arg} {
 	    adduser $who $host
 	    putnotc $who "You have been added to the bot. Please set your pass: type /msg $botnick pass <your_pass>"
 	    putnotc $who "To authenticate, type /msg $botnick auth <password>"
-	    next.addflags $who $lvl
+	    next.addflags [nick2hand $who] $lvl
 	    putnotc $nick "Added\002 $who \002as a(n)\002 [lindex $next(num2name) $lvl] \002of $next(chan) to the bot."
 	    return 1
 	} else {
