@@ -29,7 +29,7 @@ proc spamcheck { nick host handle channel text } {
 			putquick "mode $channel +q *!$host"
 			putlog "Muting $nick for excessive repetition in $channel."
 			utimer 21 [ list putquick "mode $channel -q *!$host" ]
-			puthelp "PRIVMSG $nick :Seriously; don't repeat characters like that.   It's rude. (If you pasted something, don't do that either. Use pastebin."
+			puthelp "PRIVMSG $nick :Seriously; don't repeat characters like that.   It's rude. (If you pasted something, don't do that either. Use pastebin.)"
 		}
 	}
 	return 0
