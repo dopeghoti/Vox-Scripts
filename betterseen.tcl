@@ -42,6 +42,7 @@ set php_page ""
 ###############################################################################
 
 bind pub "-|-" .seen seen_seen
+bind pub "-|-" .aseen seen_aseen
 #bind pub "-|-" .lastseen seen_seen
 #bind pub "-|-" .checkquit seen_quit
 bind pub "-|-" .left seen_quit
@@ -199,6 +200,69 @@ proc seen_seen { nick host handle channel text } {
 ##        puthelp "PRIVMSG $channel :Plus $remaining other matches"
 ##      }
 ##    }  else  {}
+
+		if {$count == 1} {
+        	#puthelp "PRIVMSG $channel :(All of 1 match)"
+    	} else {
+        	puthelp "PRIVMSG $nick :(All of $count matches)"
+    	}
+  	} else {
+    	puthelp "PRIVMSG $channel :No matches"
+	}
+}
+
+
+################################################################################
+# seen_aseen
+# !seen <nick> [max_history]
+#   seen for _all_ channels
+################################################################################
+proc seen_aseen { nick host handle channel text } { 
+ 
+	global db_handle php_page seen_noflags seen_seenmax seen_seenmaxmax
+
+	set output ""
+
+	# check that seenster is enabled for the channel
+	if {![channel get $channel seenster]} {
+    	return 0
+	}
+
+	if {$text == ""} {
+		puthelp "PRIVMSG $channel :Use: !seen <nick>"
+		return 0
+	}
+
+	set limit [mysqlescape $seen_seenmaxmax]
+  
+	set sql "SELECT * FROM vox_seen.seen WHERE nick LIKE '%[mysqlescape $text]%' ORDER BY ts DESC LIMIT $limit"
+
+	putloglev d * "seenster: executing $sql"
+
+	if {[mysqlsel $db_handle $sql] > 0} {
+		
+		set count 0
+
+		mysqlmap $db_handle {m_id m_nick m_host m_ts m_channel m_action m_text} {
+
+			if {$count == $seen_seenmaxmax} {
+        		break
+			}
+      
+			if {$count == $seen_seenmax } {
+        		puthelp "PRIVMSG $nick :Rest of matches for your search '$text' follow in private:"
+      		}
+
+			set output [format_record $m_id $m_nick $m_host $m_ts $m_channel $m_action $m_text]
+
+			if {$count < $seen_seenmax} {
+        		puthelp "PRIVMSG $channel :\[\002$nick\002\] $output"
+      		} else {
+        		puthelp "PRIVMSG $nick :\[\002$nick\002\] $output"
+      		}
+
+      		incr count
+    	}
 
 		if {$count == 1} {
         	#puthelp "PRIVMSG $channel :(All of 1 match)"
