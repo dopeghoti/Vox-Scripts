@@ -746,16 +746,20 @@ proc faq:rename_fact {nick idx handle channel args} {
 	    puts -nonewline $database ""
 	    close $database
     }
-    set oldName [ string tolower [ lindex [split [join $args] [string trim $faq(splitchar)]] 0 ] ]
-    set newName [ string tolower [ lindex [split [join $args] [string trim $faq(splitchar)]] 1 ] ]
+    #set oldName [ string tolower [ lindex [split [join $args] [string trim $faq(splitchar)]] 0 ] ]
+    #set newName [ string tolower [ lindex [split [join $args] [string trim $faq(splitchar)]] 1 ] ]
+    set oldName [ lindex [split [join $args]] 0 ] 
+    set newName [ lindex [split [join $args]] 0 ] 
     set database [open $faq(database) r]
     if {($newName=="")} {
 	    putnotc $nick "Left parameters."
 	    putnotc $nick "use: [string trim $faq(cmdchar)]mv \002oldfactoid\002 \002new factoid\002"
+	    putnotc $nick "oldName: $oldName; newName: $newName"
 	    return 0    
     } elseif {($oldName=="")} {
 	    putnotc $nick "Left parameters."
 	    putnotc $nick "use: [string trim $faq(cmdchar)]mv \002oldfactoid\002 \002new factoid\002"
+	    putnotc $nick "oldName: $oldName; newName: $newName"
 	    return 0
     }
 
