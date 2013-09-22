@@ -534,7 +534,7 @@ proc next.pub:off {nick uhost handle chan arg} {
 global next botnick
 	if {![next.check:authed $nick $uhost $handle]} { return 0 }
 	if {$next(status) == "off"} {
-		putserv "NOTICE $nick :Queue-based mode ia already off."
+		putserv "NOTICE $nick :Queue-based mode is already off."
 	} else {
 		next.status off
 		putserv "NOTICE $nick :Disabling queue-based mode.  Setting channel mode -m ..."
