@@ -648,7 +648,7 @@ proc faq:self_fact {nick idx handle channel args} {
 		}
 	}
 	close $database
-	putnotc $nick "I don't have an entry in my databse for the keyword, \002$fact\002.  For a list of entries, consult keyword \002index\002."
+	putnotc $nick "I don't have an entry in my database for the keyword, \002$fact\002.  For a list of entries, consult keyword \002index\002."
 	if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
 		putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
 	} else {
