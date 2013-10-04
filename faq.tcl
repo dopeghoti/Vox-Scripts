@@ -305,7 +305,7 @@ proc faq:explain_fact {nick idx handle channel args} {
 			}
 		}
 		close $database
-		putnotc $nick "I don't have an entry in my databse for the keyword, \002$fact\002.  For a link to a list of entries, check the keyword \002index\002."
+		putnotc $nick "I don't have an entry in my database for the keyword, \002$fact\002.  For a link to a list of entries, check the keyword \002index\002."
 		if {[matchattr $handle [string trim $faq(glob_flag)]|[string trim $faq(chan_flag)] $channel]} {
 			putnotc $nick "You could add \002$fact\002 by using [string trim $faq(cmdchar)]+ \002$fact\002[string trim $faq(splitchar)]Definition goes here."
 		} else {
@@ -747,7 +747,7 @@ proc faq:rename_fact {nick idx handle channel args} {
 		close $database
 	}
 	set oldName [ lindex [split [join $args]] 0 ] 
-	set newName [ lindex [split [join $args]] 0 ] 
+	set newName [ lindex [split [join $args]] 1 ] 
 	set database [open $faq(database) r]
 	if {($newName=="")} {
 		putnotc $nick "Left parameters."
@@ -762,41 +762,46 @@ proc faq:rename_fact {nick idx handle channel args} {
 	}
 
 	#checks for existing entry for the new, if one is there, user has to delete it first
+	putlog "checking for $newName clobber"
 	while {![eof $database]} {
 		gets $database dbline
 		set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ]] 
-		set dbdefinition [string range $dbline [expr [string length $fact]+1] end]
+		set dbdefinition [string range $dbline [expr [string length $dbfact]+1] end]
 		if {$dbfact==$newName} {
 			putnotc $nick "This keyword is already in my database:"
 			putnotc $nick "Is: \002$newName\002 - $dbdefinition"
-			putnotc $nick "If you want to rename it, first delete the name you will change it to using '[string trim $faq(cmdchar)]- $fact[string trim $faq(splitchar)]'"
+			putnotc $nick "If you want to rename it, first delete the name you will change it to using '[string trim $faq(cmdchar)]- $dbfact[string trim $faq(splitchar)]'"
 			close $database
 			return 0
 		}
 	}
 	close $database
 
+	set database [open $faq(database) r]
 	#add the entry    
-	while{![eof $database]} {
-		set database [open $faq(database) a]
+	putlog "adding $newName"
+	while {![eof $database]} {
 		gets $database dbline
 		set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ]] 
-		set dbdefinition [string range $dbline [expr [string length $fact]+1] end]
+		set dbdefinition [string range $dbline [expr [string length $dbfact]+1] end]
 		if {$dbfact==$oldName} {
-			puts $database "$newName[string trim $faq(splitchar)]$dbdefinition"
+			set databaseout [open $faq(database) a]
+			puts $databaseout "$newName[string trim $faq(splitchar)]$dbdefinition"
+			close $databaseout
 		}
 	}
 	close $database
 
 	#remove the older one
+	putlog "removing $oldName"
 	set database [open $faq(database) r]
 	set dbline ""
-	set found 0 
+	#set found 0 
 	while {![eof $database]} {
 		gets $database dbline
 		set dbfact [ string tolower [ lindex [split $dbline [string trim $faq(splitchar)]] 0 ] ]
-		set dbdefinition [string range $dbline [expr [string length $oldName]+1] end]
-		if {$dbfact!=$fact} {
+		set dbdefinition [string range $dbline [expr [string length $dbfact]+1] end]
+		if {$dbfact!=$newName} {
 			lappend datalist $dbline
 		}
 	}
@@ -808,7 +813,7 @@ proc faq:rename_fact {nick idx handle channel args} {
 	}
 	close $databaseout
 
-	putnotc $nick "The keyword \002$fact\002 was renamed correctly to my database."
+	putnotc $nick "The keyword \002$oldName\002 was renamed correctly to my database."
 	putnotc $nick "Was: \002$oldname\002"
 	putnotc $nick "Now: \002$newName\002"
 }
