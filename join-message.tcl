@@ -11,7 +11,7 @@ proc joinmsg-nothing { nick uhost handle channel {text ""} } {
 
 proc joinmsg-notice { nick uhost handle channel {text ""} } {
 	global joinmsgtext
-	utimer 7 [list puthelp "PRIVMSG $channel :$nick, welcome to #minecrafthelp.  $joinmsgtext"]
+	utimer 7 [list puthelp "NOTICE $nick :\x02$nick, welcome to #minecrafthelp.  $joinmsgtext"]
 
 }
 
