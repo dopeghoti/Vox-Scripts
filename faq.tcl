@@ -533,6 +533,7 @@ proc faq:modify_fact {nick idx handle channel args} {
 		if {$dbfact!=$fact} {
 			lappend datalist $dbline
 		} else {
+			putlog "FAQ: Alter keyword \"\002$fact\002\" by $nick ($idx)"
 			if {$dbdefinition!=$definition} {
 				lappend datalist "$fact[string trim $faq(splitchar)]$definition"
 				putnotc $nick "The keyword \002$fact\002 was modified correctly in my database."
