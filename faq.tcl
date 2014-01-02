@@ -476,6 +476,7 @@ proc faq:delete_fact {nick idx handle channel args} {
 		if {$dbfact!=$fact} {
 			lappend datalist $dbline
 		} else {
+			putlog "FAQ: \002fact\002 was deleted by $nick."
 			putnotc $nick "The keyword \002$fact\002 was deleted correctly from my database."
 			putnotc $nick "Was: \002$dbfact\002 - $dbdefinition"
 			set found 1
